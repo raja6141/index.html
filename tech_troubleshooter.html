@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tech Troubleshooter</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f3;color:#1a1a1a;min-height:100vh;padding:1rem}
+  .app{max-width:580px;margin:0 auto;padding:1.5rem 1rem}
+  h1{font-size:22px;font-weight:500;margin-bottom:4px}
+  .subtitle{font-size:13px;color:#666;margin-bottom:1.5rem}
+  .cat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:1.5rem}
+  .cat-card{background:#fff;border:1px solid #e0e0db;border-radius:12px;padding:1rem;cursor:pointer;text-align:left;transition:border-color .15s,background .15s;width:100%}
+  .cat-card:hover{background:#f5f5f3;border-color:#bbb}
+  .cat-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+  .cat-title{font-size:14px;font-weight:500}
+  .cat-sub{font-size:12px;color:#888;margin-top:3px}
+  .issue-list{display:flex;flex-direction:column;gap:6px;margin-bottom:1rem}
+  .issue-btn{background:#fff;border:1px solid #e0e0db;border-radius:8px;padding:11px 14px;cursor:pointer;text-align:left;font-size:14px;font-family:inherit;display:flex;align-items:center;gap:10px;width:100%;color:#1a1a1a}
+  .issue-btn:hover{background:#f5f5f3;border-color:#bbb}
+  .issue-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .step-card{background:#fff;border:1px solid #e0e0db;border-radius:12px;padding:1rem 1.25rem;margin-bottom:10px;transition:opacity .2s}
+  .step-card.done{opacity:.5}
+  .step-header{display:flex;align-items:flex-start;gap:12px}
+  .step-num{width:24px;height:24px;border-radius:50%;background:#f0f0ec;border:1px solid #ddd;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#666;flex-shrink:0;margin-top:1px}
+  .step-num.done-num{background:#e6f4ea;border-color:#a8d5b0;color:#2d7a3a}
+  .step-title{font-size:14px;font-weight:500;margin-bottom:4px}
+  .step-desc{font-size:13px;color:#555;line-height:1.6}
+  .step-actions{display:flex;gap:8px;margin-top:12px;margin-left:36px}
+  .btn-done{padding:6px 14px;border-radius:8px;border:1px solid #a8d5b0;background:#e6f4ea;color:#2d7a3a;font-size:13px;cursor:pointer;font-family:inherit}
+  .btn-skip{padding:6px 14px;border-radius:8px;border:1px solid #ddd;background:transparent;color:#888;font-size:13px;cursor:pointer;font-family:inherit}
+  .btn-done:hover,.btn-skip:hover{opacity:.8}
+  .progress-bar-wrap{background:#e8e8e4;border-radius:99px;height:4px;margin-bottom:1.5rem;overflow:hidden}
+  .progress-bar-fill{height:4px;border-radius:99px;background:#1D9E75;transition:width .3s}
+  .back-btn{background:transparent;border:none;color:#888;font-size:13px;cursor:pointer;padding:0;margin-bottom:1rem;font-family:inherit;display:flex;align-items:center;gap:6px}
+  .back-btn:hover{color:#1a1a1a}
+  .section-label{font-size:11px;font-weight:500;color:#aaa;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+  .resolved-box{background:#e6f4ea;border:1px solid #a8d5b0;border-radius:12px;padding:1.25rem;text-align:center;margin-top:1rem}
+  .resolved-box p{font-size:14px;color:#2d7a3a;font-weight:500}
+  .resolved-box span{font-size:13px;color:#2d7a3a;opacity:.8}
+  .footer-note{margin-top:1.5rem;padding:12px 14px;background:#fff;border:1px solid #e0e0db;border-radius:8px;font-size:12px;color:#888;text-align:center}
+  @media(max-width:400px){.cat-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script>
+const data = {
+  wifi:{label:"WiFi & internet",color:"#E6F1FB",issues:[
+    {id:"w1",label:"Can't connect to WiFi",dot:"#378ADD",steps:[
+      {t:"Restart your router & modem",d:"Unplug the power cable from your router (and modem if separate). Wait 30 seconds, plug back in, then wait 60 seconds for it to fully reconnect."},
+      {t:"Forget and reconnect to the network",d:"WiFi settings → tap the network name → 'Forget'. Then reconnect and re-enter your password carefully."},
+      {t:"Check if other devices connect",d:"Try connecting a phone or another laptop to the same WiFi. If they can connect, the issue is with your device specifically."},
+      {t:"Toggle your network adapter",d:"Windows: Device Manager → Network Adapters → right-click WiFi adapter → Disable, wait 5s, then Enable. Mac: Turn WiFi off, wait 10s, turn on."},
+      {t:"Run the network troubleshooter",d:"Windows: Settings → System → Troubleshoot → Other troubleshooters → Internet Connections → Run. Mac: Hold Option + click WiFi icon → Wireless Diagnostics."}
+    ]},
+    {id:"w2",label:"WiFi connected but no internet",dot:"#378ADD",steps:[
+      {t:"Check if your ISP is down",d:"Visit your ISP's website on your phone (mobile data) or check Downdetector.com. If there's an outage, you'll need to wait or call them."},
+      {t:"Restart your router",d:"Unplug the router for 30 seconds, then plug back in and wait 60 seconds."},
+      {t:"Flush DNS cache",d:"Windows (Command Prompt as Admin): ipconfig /flushdns   Mac (Terminal): sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder"},
+      {t:"Change DNS to Google's servers",d:"Network settings → IPv4 Properties → Use these DNS: Primary 8.8.8.8 / Secondary 8.8.4.4. This fixes most DNS-related 'no internet' issues."},
+      {t:"Reset TCP/IP stack (Windows)",d:"Command Prompt as Admin: run netsh int ip reset then netsh winsock reset. Restart your PC after."}
+    ]},
+    {id:"w3",label:"WiFi keeps disconnecting",dot:"#378ADD",steps:[
+      {t:"Update your WiFi drivers",d:"Device Manager → Network Adapters → right-click WiFi adapter → Update driver. Outdated drivers are the most common cause of random drops."},
+      {t:"Disable power saving on WiFi adapter",d:"Device Manager → Network Adapters → right-click WiFi adapter → Properties → Power Management → uncheck 'Allow the computer to turn off this device to save power'."},
+      {t:"Change router WiFi channel",d:"Log into your router (usually 192.168.1.1) and change the channel from Auto to a fixed one: 1, 6, or 11 for 2.4GHz. Neighbor interference causes drops."},
+      {t:"Check your signal strength",d:"If you have 1–2 bars, move closer to the router. Weak signal causes frequent disconnects. Consider a WiFi extender or mesh system."}
+    ]},
+    {id:"w4",label:"Slow internet speed",dot:"#378ADD",steps:[
+      {t:"Run a speed test",d:"Go to fast.com or speedtest.net. Compare result to your ISP plan speed. If far below what you pay for, continue troubleshooting."},
+      {t:"Restart router and try wired",d:"Restart router. If possible, plug your PC into the router with an ethernet cable — this tells you if the WiFi or the ISP is the bottleneck."},
+      {t:"Check for background downloads",d:"Windows Update, app store updates, OneDrive/Google Drive syncing in the background can eat bandwidth. Pause them and retest."},
+      {t:"Change DNS for faster browsing",d:"Use 1.1.1.1 (Cloudflare) or 8.8.8.8 (Google) as your DNS. Slow DNS makes pages feel sluggish even with fast internet."},
+      {t:"Scan for malware",d:"Malware secretly uses your bandwidth. Run Windows Defender → Virus & Threat Protection → Full Scan, or use Malwarebytes (free)."}
+    ]}
+  ]},
+  system:{label:"System errors",color:"#FAECE7",issues:[
+    {id:"s1",label:"PC running very slow",dot:"#D85A30",steps:[
+      {t:"Restart your computer",d:"A restart clears RAM and kills background processes. If you haven't restarted in days, this alone can help significantly."},
+      {t:"Check CPU & RAM usage",d:"Ctrl+Shift+Esc (Windows) or Activity Monitor (Mac). Look for any process using 80%+ CPU or RAM and close those programs."},
+      {t:"Disable startup programs",d:"Windows: Task Manager → Startup tab → disable programs you don't need on boot. Mac: System Settings → General → Login Items → remove unnecessary apps."},
+      {t:"Free up disk space",d:"Windows: Settings → System → Storage → Cleanup Recommendations. Keep at least 10–15% free. A nearly full disk causes dramatic slowdowns."},
+      {t:"Scan for malware",d:"Malware is a common cause of unexplained slowdowns. Run a full scan with Windows Defender or Malwarebytes."}
+    ]},
+    {id:"s2",label:"Computer keeps freezing",dot:"#D85A30",steps:[
+      {t:"Check system temperature",d:"Download HWMonitor (Windows) or iStatMenus (Mac). CPU above 90°C or GPU above 85°C = overheating. Clean dust from vents or reapply thermal paste."},
+      {t:"Run memory diagnostic",d:"Windows: search 'Windows Memory Diagnostic' → Restart now and check. Mac: hold D at startup for Apple Diagnostics. Bad RAM is a top cause of freezes."},
+      {t:"Check hard drive health",d:"Windows Command Prompt (Admin): wmic diskdrive get status — 'OK' is fine. Use CrystalDiskInfo for a detailed SMART health report. A failing drive causes freezes."},
+      {t:"Update or roll back GPU driver",d:"A recently updated GPU driver can cause freezes. Device Manager → Display Adapters → right-click → Roll Back Driver or update to the latest stable version."},
+      {t:"Check Event Viewer for errors",d:"Search 'Event Viewer' → Windows Logs → System → look for red Errors around the time of the freeze. The error code points to the exact cause."}
+    ]},
+    {id:"s3",label:"Blue screen (BSOD)",dot:"#D85A30",steps:[
+      {t:"Note the stop error code",d:"The BSOD shows a stop code like MEMORY_MANAGEMENT or DRIVER_IRQL_NOT_LESS_OR_EQUAL. Search the exact code for targeted fixes."},
+      {t:"Run SFC scan",d:"Command Prompt (Admin): sfc /scannow — scans and repairs corrupted Windows system files, one of the most common BSOD causes."},
+      {t:"Run CHKDSK",d:"Command Prompt (Admin): chkdsk C: /f /r — type Y when prompted, restart. This checks and repairs disk errors that can trigger BSODs."},
+      {t:"Update all drivers",d:"Outdated GPU, chipset, or network drivers cause most BSODs. Use Device Manager or your PC manufacturer's support page to update all drivers."},
+      {t:"Test RAM with MemTest86",d:"Download MemTest86, create a bootable USB, run it overnight. If errors are found, one or more RAM sticks is faulty and needs replacing."}
+    ]},
+    {id:"s4",label:"App keeps crashing",dot:"#D85A30",steps:[
+      {t:"Update the app",d:"Go to the app's settings or your app store and check for updates. Old versions with known bugs are the #1 crash cause."},
+      {t:"Repair or reinstall the app",d:"Windows: Settings → Apps → find the app → three dots → Repair. If no Repair option, uninstall and reinstall from the official source."},
+      {t:"Update Windows or macOS",d:"Settings → Windows Update / System Settings → Software Update. An outdated OS can cause compatibility crashes."},
+      {t:"Clear the app's cache",d:"Many apps store a cache that can corrupt. Check the app's own settings for 'Clear cache', or look in %AppData% (Windows) or ~/Library/Caches (Mac)."},
+      {t:"Check Event Viewer crash logs",d:"Event Viewer → Windows Logs → Application → find red Error entries for the app. The error code helps pinpoint the exact cause."}
+    ]}
+  ]},
+  browser:{label:"Browser issues",color:"#EAF3DE",issues:[
+    {id:"b1",label:"Pages not loading",dot:"#639922",steps:[
+      {t:"Check your internet connection",d:"Try opening a different website. If nothing loads at all, the issue is your connection — see 'WiFi connected but no internet' instead."},
+      {t:"Clear browser cache & cookies",d:"Ctrl+Shift+Delete → select All time → check Cached images and Cookies → Clear data. Works in Chrome, Edge, and Firefox."},
+      {t:"Try Incognito / Private mode",d:"If pages load in Incognito (Ctrl+Shift+N), an extension is blocking them. Disable extensions one by one to find the culprit."},
+      {t:"Try a different browser",d:"If Chrome fails but Edge or Firefox works, the issue is browser-specific. Reinstalling the failing browser often fixes it."},
+      {t:"Reset browser settings",d:"Chrome/Edge: Settings → Reset settings → Restore settings to original defaults. Fixes policy or settings issues preventing pages from loading."}
+    ]},
+    {id:"b2",label:"Browser crashes or freezes",dot:"#639922",steps:[
+      {t:"Close unused tabs",d:"Each tab uses RAM. With 30+ tabs open, the browser runs out of memory. Close unused tabs or use a tab manager extension like OneTab."},
+      {t:"Disable all extensions",d:"Extensions → disable all, then re-enable one by one. A buggy extension is the #1 cause of browser crashes."},
+      {t:"Clear cache and browsing data",d:"Ctrl+Shift+Delete → All time → clear everything. A corrupted cache can cause crashes on specific pages."},
+      {t:"Update the browser",d:"Menu → Help → About — it will check for and install updates. Restart after updating."},
+      {t:"Reinstall the browser",d:"Fully uninstall, then download a fresh installer from the official website. Your sync settings will restore after you log back in."}
+    ]},
+    {id:"b3",label:"Slow browsing",dot:"#639922",steps:[
+      {t:"Clear cache and cookies",d:"A large cache can paradoxically slow the browser down. Ctrl+Shift+Delete → All time → Cached images & Cookies → Clear."},
+      {t:"Disable unused extensions",d:"Each active extension adds load time. Go to Extensions settings and disable any you don't actively use."},
+      {t:"Enable hardware acceleration",d:"Chrome/Edge: Settings → search 'hardware acceleration' → turn on. This uses your GPU for faster page rendering."},
+      {t:"Change DNS to 1.1.1.1",d:"Slow DNS lookup makes every page feel slow to start. Change system DNS to 1.1.1.1 (Cloudflare) — it's the fastest public DNS resolver."}
+    ]}
+  ]},
+  audio:{label:"Audio issues",color:"#FAEEDA",issues:[
+    {id:"a1",label:"No sound at all",dot:"#BA7517",steps:[
+      {t:"Check volume and mute",d:"Click the speaker icon in the taskbar — make sure it's not muted and the volume is up. Also check physical mute buttons on your keyboard (Fn + speaker key)."},
+      {t:"Check the correct output device",d:"Right-click the speaker icon → Sound settings → Output → make sure the correct device (speakers or headphones) is selected, not a disconnected one."},
+      {t:"Restart Windows Audio service",d:"Press Win+R → type services.msc → find 'Windows Audio' → right-click → Restart. Also restart 'Windows Audio Endpoint Builder'."},
+      {t:"Update or reinstall audio drivers",d:"Device Manager → Sound, video and game controllers → right-click your audio device → Update driver. If that fails, uninstall and restart — Windows will reinstall automatically."},
+      {t:"Run audio troubleshooter",d:"Settings → System → Troubleshoot → Other troubleshooters → Playing Audio → Run. Fixes most common audio issues automatically."}
+    ]},
+    {id:"a2",label:"Headphones not detected",dot:"#BA7517",steps:[
+      {t:"Try a different port",d:"If using 3.5mm jack, try the front and back ports. Front panel ports sometimes fail. Try the port on the back of the PC or a USB-C adapter."},
+      {t:"Check output device selection",d:"Right-click speaker icon → Sound settings → Output → look for your headphones in the list and select them. Windows sometimes auto-switches to wrong output."},
+      {t:"Check headphone connection",d:"Unplug and firmly re-plug the headphones. For Bluetooth: go to Bluetooth settings → remove the device → re-pair it from scratch."},
+      {t:"Update audio drivers",d:"Device Manager → Sound, video and game controllers → right-click your audio device → Update driver or uninstall and restart PC to reinstall."},
+      {t:"Test headphones on another device",d:"If the headphones don't work on a phone or another PC either, the headphones themselves are faulty."}
+    ]},
+    {id:"a3",label:"Microphone not working",dot:"#BA7517",steps:[
+      {t:"Check app microphone permission",d:"Windows: Settings → Privacy & security → Microphone → make sure the app you're using has permission turned on."},
+      {t:"Select correct input device",d:"Right-click speaker icon → Sound settings → Input → make sure your mic is selected as the input device, not a different one."},
+      {t:"Check mic isn't muted",d:"Some headsets have a physical mute button on the cord or ear cup. Check if it's muted. Also check the app's own mic settings."},
+      {t:"Test mic in Sound settings",d:"Sound settings → Input → Microphone → speak and watch the blue bar — if it moves, Windows detects your voice. If not, check drivers."},
+      {t:"Update or reinstall mic/audio drivers",d:"Device Manager → Sound, video and game controllers → right-click → Update driver. For USB mics, try a different USB port."}
+    ]}
+  ]},
+  display:{label:"Display issues",color:"#EEEDFE",issues:[
+    {id:"d1",label:"Screen flickering",dot:"#7F77DD",steps:[
+      {t:"Check the cable connection",d:"Unplug and firmly re-plug your monitor cable (HDMI, DisplayPort, VGA). A loose cable is the most common cause of flickering."},
+      {t:"Update display / GPU drivers",d:"Device Manager → Display Adapters → right-click your GPU → Update driver. Or download directly from NVIDIA, AMD, or Intel's website."},
+      {t:"Change refresh rate",d:"Right-click desktop → Display settings → Advanced display → choose a specific refresh rate (e.g. 60Hz). 'Dynamic' or wrong rates cause flicker on some monitors."},
+      {t:"Test with a different cable",d:"HDMI and DisplayPort cables can fail internally. Try a different cable — a bad cable causes constant flickering."},
+      {t:"Check for app conflicts",d:"Task Manager → check if a specific app triggers the flicker. If only some apps flicker, it may be a GPU driver conflict with that software."}
+    ]},
+    {id:"d2",label:"External monitor not detected",dot:"#7F77DD",steps:[
+      {t:"Press Win+P to detect display",d:"Press Windows key + P → click 'Extend' or 'Duplicate'. Sometimes Windows doesn't auto-detect a new monitor until prompted."},
+      {t:"Check all cable connections",d:"Unplug and re-plug both ends of the monitor cable (at the PC and at the monitor). Make sure the monitor is turned on and set to the correct input source."},
+      {t:"Try a different port or cable",d:"Try a different HDMI or DisplayPort on your PC. Also try a different cable — a faulty cable prevents detection entirely."},
+      {t:"Update GPU drivers",d:"Outdated GPU drivers frequently fail to detect monitors. Download latest drivers from NVIDIA.com, AMD.com, or Intel.com."},
+      {t:"Check display settings",d:"Right-click desktop → Display settings → scroll down → click 'Detect' under the monitor diagram. Windows will scan for new displays."}
+    ]},
+    {id:"d3",label:"Screen resolution looks wrong",dot:"#7F77DD",steps:[
+      {t:"Set recommended resolution",d:"Right-click desktop → Display settings → Resolution → select the one marked '(Recommended)'. This is your monitor's native resolution and looks sharpest."},
+      {t:"Update display drivers",d:"Wrong resolution is often caused by Windows using a generic display driver. Update via Device Manager → Display Adapters → Update driver."},
+      {t:"Check monitor input settings",d:"Use the physical buttons on your monitor to access its OSD menu. Check that the correct input (HDMI 1, DP, etc.) is selected and scaling is set to 1:1."},
+      {t:"Adjust DPI scaling",d:"Display settings → Scale → set to 100% or 125%. Incorrect scaling makes everything look fuzzy or too large even at correct resolution."}
+    ]}
+  ]},
+  mobile:{label:"Phone & mobile",color:"#FBEAF0",issues:[
+    {id:"m1",label:"Mobile data not working",dot:"#D4537E",steps:[
+      {t:"Toggle airplane mode on and off",d:"Pull down the notification bar → tap Airplane mode ON, wait 10 seconds, then tap it OFF again. This forces the phone to reconnect to the network."},
+      {t:"Restart your phone",d:"Hold the power button → Restart. A simple restart fixes most mobile data issues."},
+      {t:"Check data is enabled",d:"Settings → Mobile/Cellular Data → make sure it's turned on. Also check you haven't hit your monthly data limit with your carrier."},
+      {t:"Reset APN settings",d:"Settings → Mobile Network → Access Point Names → tap the three-dot menu → Reset to default. Wrong APN settings prevent data from working."},
+      {t:"Re-insert your SIM card",d:"Power off the phone, remove the SIM card, wait 10 seconds, reinsert it, and power back on. A poorly seated SIM causes data failures."}
+    ]},
+    {id:"m2",label:"Phone running slow",dot:"#D4537E",steps:[
+      {t:"Restart the phone",d:"A restart clears RAM and stops background processes. Hold power → Restart. This alone fixes most slowdowns."},
+      {t:"Free up storage space",d:"Settings → Storage → check usage. If less than 10–15% is free, delete unused apps, photos (back them up first), and clear app caches."},
+      {t:"Clear app caches",d:"Settings → Apps → select a heavy app (Chrome, Instagram, etc.) → Storage → Clear Cache. Do this for your most-used apps."},
+      {t:"Disable or remove unused apps",d:"Background apps refresh and use RAM even when you're not using them. Go to Settings → Apps and disable or uninstall apps you don't need."},
+      {t:"Check for OS updates",d:"Settings → Software Update / System Update. A major OS update can fix performance issues, especially on older devices with known bugs."}
+    ]},
+    {id:"m3",label:"Phone not charging",dot:"#D4537E",steps:[
+      {t:"Clean the charging port",d:"Use a toothpick or soft brush to gently remove lint and dust from the charging port. A blocked port is the most common cause of charging failures."},
+      {t:"Try a different cable and charger",d:"Cables (especially USB-C) fail internally without visible damage. Test with a different cable and wall adapter to rule out a bad accessory."},
+      {t:"Try a different power source",d:"Try the wall socket instead of a USB hub or laptop port. Some USB ports don't provide enough power to charge phones reliably."},
+      {t:"Restart the phone while charging",d:"Sometimes the OS fails to detect the charger. Restart the phone with the cable plugged in — it often starts charging after reboot."},
+      {t:"Check for software issues",d:"Settings → Battery. If battery percentage jumps erratically, the battery may need calibration or replacement. Contact your phone manufacturer or service center."}
+    ]},
+    {id:"m4",label:"Bluetooth not connecting",dot:"#D4537E",steps:[
+      {t:"Toggle Bluetooth off and on",d:"Settings → Bluetooth → turn off, wait 5 seconds, turn on. Then try pairing again."},
+      {t:"Forget device and re-pair",d:"Settings → Bluetooth → tap the device name → Forget / Unpair. Then put the device back in pairing mode and connect fresh."},
+      {t:"Restart both devices",d:"Restart your phone AND the Bluetooth device (headphones, speaker, etc.). Bluetooth stacks can get stuck and need a fresh start."},
+      {t:"Check for interference",d:"WiFi (2.4GHz), microwaves, and other Bluetooth devices cause interference. Move away from such devices and try again."},
+      {t:"Update phone software",d:"Settings → Software Update. Bluetooth bugs are frequently fixed in OS updates, especially on Android."}
+    ]}
+  ]}
+};
+
+const icons = {
+  wifi:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>`,
+  system:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D85A30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,
+  browser:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B6D11" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`,
+  audio:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#BA7517" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`,
+  display:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#534AB7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,
+  mobile:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#993556" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>`
+};
+
+let view='home', selCat=null, selIssue=null, stepStates={};
+
+function render(){
+  const app=document.getElementById('app');
+  if(view==='home') renderHome(app);
+  else if(view==='issues') renderIssues(app);
+  else renderSteps(app);
+}
+
+function renderHome(app){
+  let h=`<h1>Tech troubleshooter</h1><p class="subtitle">Pick a category to get step-by-step fixes</p><div class="cat-grid">`;
+  for(const[k,c] of Object.entries(data)){
+    h+=`<button class="cat-card" onclick="selCatFn('${k}')"><div class="cat-icon" style="background:${c.color}">${icons[k]}</div><div class="cat-title">${c.label}</div><div class="cat-sub">${c.issues.length} common issues</div></button>`;
+  }
+  h+=`</div><div class="footer-note">Works offline &bull; No account needed &bull; Free to use</div>`;
+  app.innerHTML=h;
+}
+
+function renderIssues(app){
+  const c=data[selCat];
+  let h=`<button class="back-btn" onclick="goHome()">&#8592; back</button><div class="section-label">${c.label}</div><p style="font-size:14px;color:#555;margin-bottom:1rem">What's the problem?</p><div class="issue-list">`;
+  for(const issue of c.issues){
+    h+=`<button class="issue-btn" onclick="selIssueFn('${issue.id}')"><div class="issue-dot" style="background:${issue.dot}"></div><span>${issue.label}</span><span style="margin-left:auto;color:#aaa;font-size:13px">${issue.steps.length} steps ›</span></button>`;
+  }
+  app.innerHTML=h+`</div>`;
+}
+
+function renderSteps(app){
+  const c=data[selCat];
+  const issue=c.issues.find(i=>i.id===selIssue);
+  const total=issue.steps.length;
+  const done=issue.steps.filter((_,i)=>stepStates[selIssue+'-'+i]).length;
+  const pct=Math.round((done/total)*100);
+  let h=`<button class="back-btn" onclick="goIssues()">&#8592; ${c.label}</button>`;
+  h+=`<p style="font-size:16px;font-weight:500;margin-bottom:4px">${issue.label}</p>`;
+  h+=`<p style="font-size:12px;color:#aaa;margin-bottom:14px">Step ${Math.min(done+1,total)} of ${total} &nbsp;·&nbsp; ${pct}% complete</p>`;
+  h+=`<div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div>`;
+  if(done===total){
+    h+=`<div class="resolved-box"><p>All steps completed!</p><span>Hopefully that fixed it!</span></div>`;
+  } else {
+    for(let i=0;i<issue.steps.length;i++){
+      const s=issue.steps[i];
+      const isDone=!!stepStates[selIssue+'-'+i];
+      h+=`<div class="step-card${isDone?' done':''}"><div class="step-header"><div class="step-num${isDone?' done-num':''}">${isDone?'✓':(i+1)}</div><div style="flex:1"><div class="step-title">${s.t}</div><div class="step-desc">${s.d}</div></div></div>${!isDone?`<div class="step-actions"><button class="btn-done" onclick="markDone(${i})">Done ✓</button><button class="btn-skip" onclick="markDone(${i})">Skip</button></div>`:''}</div>`;
+    }
+  }
+  app.innerHTML=h;
+}
+
+function selCatFn(k){selCat=k;view='issues';render();}
+function selIssueFn(id){selIssue=id;view='steps';render();}
+function goHome(){view='home';render();}
+function goIssues(){view='issues';render();}
+function markDone(i){stepStates[selIssue+'-'+i]=true;render();}
+
+render();
+</script>
+</body>
+</html>
